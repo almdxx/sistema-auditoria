@@ -10,24 +10,27 @@ from datetime import date
 import crud, models, schemas
 from database import SessionLocal, engine, Base
 
+# Cria as tabelas se não existirem quando a aplicação inicia
 Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 
+# Bloco para servir o frontend
 frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
-if not os.path.exists(frontend_dir): os.makedirs(frontend_dir)
 app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/", response_class=FileResponse, include_in_schema=False)
 async def read_root():
-    index_path = os.path.join(frontend_dir, "index.html")
-    if not os.path.exists(index_path): raise HTTPException(status_code=404, detail="Arquivo index.html não encontrado.")
-    return index_path
+    return os.path.join(frontend_dir, "index.html")
 
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
+    try:
+        yield db
+    finally:
+        db.close()
 
+# ... (todas as outras rotas permanecem iguais)
 @app.get("/entidades/", response_model=List[schemas.Entidade])
 def listar_entidades_api(db: Session = Depends(get_db)): return crud.listar_entidades(db)
 

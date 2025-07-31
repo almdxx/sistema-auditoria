@@ -2,7 +2,8 @@ from database import SessionLocal, engine
 from models import Entidade, Base
 
 def seed_data():
-    Base.metadata.create_all(bind=engine)
+    # Esta linha foi removida para ser chamada apenas no main.py
+    # Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     
     nomes_entidades = ['iguatemi', 'moinhos', 'matriz', 'outlet']
