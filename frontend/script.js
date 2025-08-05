@@ -1,5 +1,7 @@
+// FILE: script.js (VERSÃO FINAL E ATUALIZADA)
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Seletores
+    // --- Seletores de Elementos ---
     const formImportar = document.getElementById('form-importar-estoque');
     const selectEntidadeImport = document.getElementById('entidade-select-importar');
     const inputArquivo = document.getElementById('input-planilha');
@@ -25,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
     const tabelaRelatorioBody = document.getElementById('tabela-relatorio-contagem');
 
-    // API Fetch
+    // --- Função Principal de API ---
     async function apiFetch(url, options = {}) {
         try {
             const response = await fetch(url, options);
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error('Erro na API:', error); throw error; }
     }
 
-    // Funções
+    // --- Funções da AUDITORIA POR ITEM ---
     async function carregarEntidades() {
         try {
             const entidades = await apiFetch('/entidades/');
@@ -49,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filtroEntidade.innerHTML = `<option value="">Todas</option>${options}`;
         } catch (error) { alert(`Erro ao carregar entidades: ${error.message}`); }
     }
-
+    // ... (outras funções da auditoria por item sem alterações) ...
     async function criarAuditoria(event) {
         event.preventDefault();
         const entidadeId = selectEntidadeCriar.value;
@@ -67,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarDetalhesAuditoria(novaAuditoria.id);
         } catch (error) { alert(`Erro ao criar auditoria: ${error.message}`); }
     }
-    
     async function mostrarDetalhesAuditoria(auditoriaId) {
         try {
             const detalhes = await apiFetch(`/auditorias/${auditoriaId}`);
@@ -82,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (error) { alert(`Erro ao carregar detalhes: ${error.message}`); }
     }
-
     window.salvarContagem = async function(inputElement, auditoriaId, produtoId) {
         const linha = inputElement.closest('tr');
         const inputFisica = linha.querySelector('input[onchange*="qtd_fisica"]');
@@ -98,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
             celulaDiferenca.style.color = resultado.diferenca !== 0 ? '#ff5c5c' : 'inherit';
         } catch (error) { alert(`Erro ao salvar contagem: ${error.message}`); }
     };
-
     async function carregarAuditorias() {
         try {
             const auditorias = await apiFetch('/auditorias/');
@@ -117,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) { alert(`Erro ao carregar auditorias: ${error.message}`); }
     }
-
     async function importarPlanilha(event) {
         event.preventDefault();
         const entidadeId = selectEntidadeImport.value;
@@ -134,6 +132,24 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert(`Erro ao importar planilha: ${error.message}`); }
     }
 
+    // --- Funções da CONTAGEM POR CATEGORIA ---
+    
+    // --- MUDANÇA AQUI: Nova função para apagar ---
+    window.apagarContagem = async function(contagemId) {
+        if (!confirm('Tem certeza que deseja apagar este registro de contagem?')) {
+            return;
+        }
+        try {
+            await apiFetch(`/contagens/categoria/${contagemId}`, {
+                method: 'DELETE'
+            });
+            alert('Registro apagado com sucesso!');
+            carregarRelatorioContagens(); // Atualiza a tabela
+        } catch(error) {
+            alert(`Erro ao apagar registro: ${error.message}`);
+        }
+    }
+
     async function preencherCategoriasDropdown() {
         try {
             const categorias = await apiFetch('/categorias/');
@@ -142,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
             filtroCategoria.innerHTML = `<option value="">Todas</option>${options}`;
         } catch (error) { alert(`Erro ao carregar categorias: ${error.message}`); }
     }
-
     async function atualizarEstoqueSistema() {
         const categoria = selectCategoriaContagem.value;
         const entidadeId = selectEntidadeContagem.value;
@@ -153,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
             inputQtdSistema.value = data.qtd_sistema;
         } catch (error) { alert(`Erro ao buscar estoque: ${error.message}`); inputQtdSistema.value = 'Erro'; }
     }
-
     async function salvarContagemCategoria(event) {
         event.preventDefault();
         const dados = {
@@ -175,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(error) { alert(`Erro ao salvar contagem: ${error.message}`); }
     }
 
+    // --- MUDANÇA AQUI: Lógica de renderização do relatório atualizada ---
     async function carregarRelatorioContagens() {
         const params = new URLSearchParams();
         if (filtroData.value) params.append('data', filtroData.value);
@@ -185,17 +200,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const relatorio = await apiFetch(`/contagens/categoria/?${params.toString()}`);
             tabelaRelatorioBody.innerHTML = '';
             if (!relatorio.length) {
-                tabelaRelatorioBody.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum registro encontrado.</td></tr>';
+                tabelaRelatorioBody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum registro encontrado.</td></tr>'; // colspan agora é 8
                 return;
             }
             relatorio.forEach(r => {
                 const diferencaClasse = r.diferenca !== 0 ? 'text-danger fw-bold' : '';
-                tabelaRelatorioBody.innerHTML += `<tr><td>${new Date(r.data_contagem + 'T00:00:00').toLocaleDateString()}</td><td>${r.entidade.nome}</td><td>${r.categoria_nome}</td><td>${r.responsavel}</td><td>${r.qtd_sistema}</td><td>${r.qtd_contada}</td><td class="${diferencaClasse}">${r.diferenca}</td></tr>`;
+                tabelaRelatorioBody.innerHTML += `
+                    <tr>
+                        <td>${new Date(r.data_contagem + 'T00:00:00').toLocaleDateString()}</td>
+                        <td>${r.entidade.nome}</td>
+                        <td>${r.categoria_nome}</td>
+                        <td>${r.responsavel}</td>
+                        <td>${r.qtd_sistema}</td>
+                        <td>${r.qtd_contada}</td>
+                        <td class="${diferencaClasse}">${r.diferenca}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="apagarContagem(${r.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
         } catch(error) { alert(`Erro ao carregar relatório: ${error.message}`); }
     }
 
-    // Inicialização
+    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
     inputDataContagem.value = new Date().toISOString().split('T')[0];
     formImportar.addEventListener('submit', importarPlanilha);
     formCriarAuditoria.addEventListener('submit', criarAuditoria);

@@ -67,7 +67,7 @@
                             <div class="mb-3"><label for="contagem-data" class="form-label">Data da Contagem</label><input type="date" id="contagem-data" class="form-control" required></div>
                             <div class="mb-3"><label for="contagem-responsavel" class="form-label">Responsável</label><input type="text" id="contagem-responsavel" class="form-control" placeholder="Nome do responsável" required></div>
                             <div class="mb-3"><label for="contagem-entidade" class="form-label">Entidade Contada</label><select id="contagem-entidade" class="form-select" required><option value="">Carregando...</option></select></div>
-                            <div class="mb-3"><label for="contagem-categoria" class="form-label">Categoria Contada</label><select id="contagem-categoria" class="form-select" required><option value="">Selecione a entidade</option></select></div>
+                            <div class="mb-3"><label for="contagem-categoria" class="form-label">Categoria Contada</label><select id="contagem-categoria" class="form-select" required><option value="">Selecione a entidade primeiro</option></select></div>
                             <div class="row"><div class="col"><label for="contagem-qtd-sistema" class="form-label">Qtd. Sistema</label><input type="number" id="contagem-qtd-sistema" class="form-control" disabled></div><div class="col"><label for="contagem-qtd-contada" class="form-label">Qtd. Contada</label><input type="number" id="contagem-qtd-contada" class="form-control" required></div></div>
                             <button type="submit" class="btn btn-success w-100 mt-3">Salvar Contagem</button>
                         </form>
@@ -85,7 +85,11 @@
                 </form>
                 <div class="table-responsive">
                     <table class="table table-bordered">
-                        <thead class="table-dark"><tr><th>Data</th><th>Entidade</th><th>Categoria</th><th>Responsável</th><th>Qtd. Sistema</th><th>Qtd. Contada</th><th>Diferença</th></tr></thead>
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Data</th><th>Entidade</th><th>Categoria</th><th>Responsável</th><th>Qtd. Sistema</th><th>Qtd. Contada</th><th>Diferença</th><th>Ações</th>
+                            </tr>
+                        </thead>
                         <tbody id="tabela-relatorio-contagem"></tbody>
                     </table>
                 </div>
