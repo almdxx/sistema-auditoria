@@ -1,10 +1,31 @@
-import os
+# FILE: database.py
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from dotenv import load_dotenv
+import os
 
-# Cole a sua URL EXTERNA do banco de dados da Render aqui
-DATABASE_URL = "postgresql://auditoria_py_user:3nua3J3TPFe1aPs0mlFiPJXL1n20WE3J@dpg-d25l6mc9c44c73dg5m20-a.oregon-postgres.render.com/auditoria_py"
+load_dotenv()
+
+# --- CONFIGURAÇÃO DO BANCO DE DADOS ---
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME")
+
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
+
+# --- DEPENDÊNCIA DE SESSÃO ---
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

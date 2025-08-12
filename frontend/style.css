@@ -1,31 +1,79 @@
-.list-group-item {
-    cursor: pointer;
+/* FILE: frontend/style.css */
+
+/* TEMA CLARO */
+:root {
+    --bs-body-bg: #f8f9fa;
+    --bs-body-color: #212529;
+    --bs-border-color: #dee2e6;
+    --bs-secondary-bg: #e9ecef;
+    --brand-color: #6f42c1;
+    --brand-color-light: #8558d3;
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.03);
+}
+/* TEMA ESCURO */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bs-body-bg: #212529;
+        --bs-body-color: #f0f0f0; 
+        --bs-border-color: #495057;
+        --bs-secondary-bg: #343a40;
+        --brand-color: #8558d3; 
+        --brand-color-light: #9a73e1;
+        --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+    }
+
+    .table {
+        --bs-table-color: var(--bs-body-color);
+        --bs-table-border-color: var(--bs-border-color);
+    }
+
+    .text-muted {
+        color: rgba(240, 240, 240, 0.7) !important;
+    }
 }
 
-.list-group-item:hover {
-    background-color: #333;
+body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }
 
-.list-group-item.active {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+.card, .navbar {
+    background-color: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
 }
 
-.input-contagem {
-    max-width: 100px;
-    text-align: center;
+h1, h2, h3, h4, h5, .navbar-brand {
+    color: var(--brand-color);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--brand-color);
+    --bs-btn-border-color: var(--brand-color);
+    --bs-btn-hover-bg: var(--brand-color-light);
+    --bs-btn-hover-border-color: var(--brand-color-light);
+}
+
+.nav-tabs .nav-link {
+    color: var(--bs-body-color); 
+    opacity: 0.7;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--bs-body-bg);
+    border-bottom-color: var(--bs-body-bg) !important;
+    color: var(--brand-color);
+    font-weight: bold;
+    opacity: 1;
 }
 
 .diferenca-negativa {
     color: #ff5252;
     font-weight: bold;
 }
-
 .diferenca-positiva {
     color: #448aff;
     font-weight: bold;
 }
-
 .diferenca-zero {
     color: #69f0ae;
 }

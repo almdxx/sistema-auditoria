@@ -1,33 +1,33 @@
-// FILE: script.js (VERSÃO FINAL E ATUALIZADA)
+// FILE: script.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Seletores de Elementos ---
-    const formImportar = document.getElementById('form-importar-estoque');
-    const selectEntidadeImport = document.getElementById('entidade-select-importar');
-    const inputArquivo = document.getElementById('input-planilha');
-    const formCriarAuditoria = document.getElementById('form-nova-auditoria');
-    const selectEntidadeCriar = document.getElementById('entidade-select-auditoria');
-    const listaAuditorias = document.getElementById('lista-auditorias');
+    // --- SELETORES DE ELEMENTOS ---
+    const formNovaAuditoriaEscopo = document.getElementById('form-nova-auditoria-escopo');
+    const inputAuditoriaResponsavel = document.getElementById('auditoria-responsavel');
+    const selectAuditoriaEntidade = document.getElementById('auditoria-entidade-select');
+    const containerCategoriasCheckbox = document.getElementById('container-categorias-checkbox');
+    const checkSelecionarTodas = document.getElementById('selecionar-todas-categorias');
+    const selectAuditoriaAtiva = document.getElementById('auditoria-ativa-select');
+    const formImportarGeral = document.getElementById('form-importar-geral');
+    const selectImportarEntidade = document.getElementById('importar-entidade-select');
+    const inputPlanilhaGeral = document.getElementById('input-planilha-geral');
+    const dataUltimaAtualizacaoEl = document.getElementById('data-ultima-atualizacao');
+    const painelAuditoriaAtiva = document.getElementById('painel-auditoria-ativa');
+    const painelTitulo = document.getElementById('painel-titulo');
+    const painelDataInicio = document.getElementById('painel-data-inicio');
+    const painelDataFim = document.getElementById('painel-data-fim');
+    const tabelaContagemManualBody = document.getElementById('tabela-contagem-manual');
     const placeholderDetalhe = document.getElementById('placeholder-detalhe');
-    const detalheContainer = document.getElementById('detalhe-auditoria-container');
-    const detalheNome = document.getElementById('detalhe-auditoria-nome');
-    const tabelaItensBody = document.getElementById('tabela-itens-auditoria');
-    const formContagemCategoria = document.getElementById('form-contagem-categoria');
-    const inputDataContagem = document.getElementById('contagem-data');
-    const inputResponsavel = document.getElementById('contagem-responsavel');
-    const selectEntidadeContagem = document.getElementById('contagem-entidade');
-    const selectCategoriaContagem = document.getElementById('contagem-categoria');
-    const inputQtdSistema = document.getElementById('contagem-qtd-sistema');
-    const inputQtdContada = document.getElementById('contagem-qtd-contada');
-    const formFiltrosContagem = document.getElementById('form-filtros-contagem');
-    const filtroData = document.getElementById('filtro-data');
-    const filtroCategoria = document.getElementById('filtro-categoria');
-    const filtroEntidade = document.getElementById('filtro-entidade');
-    const filtroResponsavel = document.getElementById('filtro-responsavel');
-    const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
-    const tabelaRelatorioBody = document.getElementById('tabela-relatorio-contagem');
+    const formContagemManual = document.getElementById('form-contagem-manual');
+    const btnSalvarContagens = document.getElementById('btn-salvar-contagens');
+    const btnExportarExcel = document.getElementById('btn-exportar-excel');
+    const btnFinalizarAuditoria = document.getElementById('btn-finalizar-auditoria');
+    const statusAuditoriaFinalizada = document.getElementById('status-auditoria-finalizada');
 
-    // --- Função Principal de API ---
+    let auditoriasDisponiveis = [];
+    let auditoriaAtivaId = null;
+
+    // --- FUNÇÃO PRINCIPAL DE API ---
     async function apiFetch(url, options = {}) {
         try {
             const response = await fetch(url, options);
@@ -36,207 +36,229 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(errorData.detail || `Erro (Status: ${response.status})`);
             }
             return response.status === 204 ? null : await response.json();
-        } catch (error) { console.error('Erro na API:', error); throw error; }
+        } catch (error) {
+            console.error('Erro na API:', error);
+            alert(`Erro: ${error.message}`);
+            throw error;
+        }
     }
 
-    // --- Funções da AUDITORIA POR ITEM ---
+    // --- FUNÇÕES DE CARREGAMENTO INICIAL ---
     async function carregarEntidades() {
         try {
             const entidades = await apiFetch('/entidades/');
-            const options = entidades.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');
+            const options = entidades.map(e => `<option value="${e.id}" data-nome="${e.nome}">${e.nome}</option>`).join('');
             const innerHtml = `<option value="">Selecione...</option>${options}`;
-            selectEntidadeImport.innerHTML = innerHtml;
-            selectEntidadeCriar.innerHTML = innerHtml;
-            selectEntidadeContagem.innerHTML = innerHtml;
-            filtroEntidade.innerHTML = `<option value="">Todas</option>${options}`;
-        } catch (error) { alert(`Erro ao carregar entidades: ${error.message}`); }
+            if(selectAuditoriaEntidade) selectAuditoriaEntidade.innerHTML = innerHtml;
+            if(selectImportarEntidade) selectImportarEntidade.innerHTML = innerHtml;
+        } catch (error) {
+            const errorHtml = '<option value="">Erro ao carregar</option>';
+            if(selectAuditoriaEntidade) selectAuditoriaEntidade.innerHTML = errorHtml;
+            if(selectImportarEntidade) selectImportarEntidade.innerHTML = errorHtml;
+        }
     }
-    // ... (outras funções da auditoria por item sem alterações) ...
-    async function criarAuditoria(event) {
-        event.preventDefault();
-        const entidadeId = selectEntidadeCriar.value;
-        if (!entidadeId) { alert('Selecione uma entidade.'); return; }
-        const nomeEntidade = selectEntidadeCriar.options[selectEntidadeCriar.selectedIndex].text;
-        const hoje = new Date();
-        const nomeAuditoria = `Auditoria ${nomeEntidade} ${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+
+    async function carregarCategoriasParaFormulario() {
         try {
-            const novaAuditoria = await apiFetch('/auditorias/', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome: nomeAuditoria, entidade_id: parseInt(entidadeId) }),
-            });
-            alert(`Auditoria "${novaAuditoria.nome}" criada.`);
-            await carregarAuditorias();
-            mostrarDetalhesAuditoria(novaAuditoria.id);
-        } catch (error) { alert(`Erro ao criar auditoria: ${error.message}`); }
-    }
-    async function mostrarDetalhesAuditoria(auditoriaId) {
-        try {
-            const detalhes = await apiFetch(`/auditorias/${auditoriaId}`);
-            placeholderDetalhe.classList.add('d-none');
-            detalheContainer.classList.remove('d-none');
-            detalheNome.textContent = `Detalhes de: ${detalhes.nome}`;
-            tabelaItensBody.innerHTML = '';
-            detalhes.itens.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${item.grupo || ''}</td><td>${item.nome_item}</td><td>${item.qtd_sistema}</td><td><input type="number" class="form-control form-control-sm" value="${item.qtd_fisica}" onchange="salvarContagem(this, ${auditoriaId}, ${item.produto_id})"></td><td><input type="number" class="form-control form-control-sm" value="${item.qtd_gerente || ''}" onchange="salvarContagem(this, ${auditoriaId}, ${item.produto_id})"></td><td id="diferenca-${item.produto_id}">${item.diferenca}</td>`;
-                tabelaItensBody.appendChild(tr);
-            });
-        } catch (error) { alert(`Erro ao carregar detalhes: ${error.message}`); }
-    }
-    window.salvarContagem = async function(inputElement, auditoriaId, produtoId) {
-        const linha = inputElement.closest('tr');
-        const inputFisica = linha.querySelector('input[onchange*="qtd_fisica"]');
-        const inputGerente = linha.querySelector('input[onchange*="qtd_gerente"]');
-        const formData = new FormData();
-        formData.append('produto_id', produtoId);
-        formData.append('qtd_fisica', inputFisica.value || 0);
-        if (inputGerente.value) formData.append('qtd_gerente', inputGerente.value);
-        try {
-            const resultado = await apiFetch(`/auditorias/${auditoriaId}/contagem`, { method: 'POST', body: formData });
-            const celulaDiferenca = document.getElementById(`diferenca-${produtoId}`);
-            celulaDiferenca.textContent = resultado.diferenca;
-            celulaDiferenca.style.color = resultado.diferenca !== 0 ? '#ff5c5c' : 'inherit';
-        } catch (error) { alert(`Erro ao salvar contagem: ${error.message}`); }
-    };
-    async function carregarAuditorias() {
-        try {
-            const auditorias = await apiFetch('/auditorias/');
-            listaAuditorias.innerHTML = '';
-            if (!auditorias.length) {
-                listaAuditorias.innerHTML = '<li class="list-group-item">Nenhuma auditoria encontrada.</li>';
+            containerCategoriasCheckbox.innerHTML = '<p class="text-muted">Carregando...</p>';
+            const categorias = await apiFetch('/categorias/importadas/');
+            if (categorias.length === 0) {
+                containerCategoriasCheckbox.innerHTML = '<p class="text-info">Nenhuma categoria encontrada. Use a aba "Atualizar Estoque Geral".</p>';
+                checkSelecionarTodas.disabled = true;
             } else {
-                auditorias.forEach(auditoria => {
-                    const item = document.createElement('li');
-                    item.className = 'list-group-item list-group-item-action';
-                    item.style.cursor = 'pointer';
-                    item.textContent = `ID ${auditoria.id}: ${auditoria.nome} (${auditoria.entidade.nome})`;
-                    item.onclick = () => mostrarDetalhesAuditoria(auditoria.id);
-                    listaAuditorias.appendChild(item);
+                const checkboxesHtml = categorias.map(cat => `<div class="form-check"><input class="form-check-input categoria-checkbox" type="checkbox" value="${cat}" id="cat-${cat.replace(/\s+/g, '')}"><label class="form-check-label" for="cat-${cat.replace(/\s+/g, '')}">${cat}</label></div>`).join('');
+                containerCategoriasCheckbox.innerHTML = checkboxesHtml;
+                checkSelecionarTodas.disabled = false;
+            }
+        } catch (error) {}
+    }
+    
+    async function carregarAuditoriasAtivas() {
+        try {
+            auditoriasDisponiveis = await apiFetch('/auditorias/');
+            const valorAnterior = selectAuditoriaAtiva.value;
+            selectAuditoriaAtiva.innerHTML = '';
+            if (auditoriasDisponiveis.length === 0) {
+                selectAuditoriaAtiva.innerHTML = '<option value="">Crie uma auditoria para começar</option>';
+            } else {
+                selectAuditoriaAtiva.innerHTML = '<option value="">Selecione uma auditoria...</option>';
+                auditoriasDisponiveis.forEach(auditoria => {
+                    const option = document.createElement('option');
+                    option.value = auditoria.id;
+                    option.textContent = `${auditoria.codigo_referencia}: ${auditoria.nome}`;
+                    selectAuditoriaAtiva.appendChild(option);
                 });
             }
-        } catch (error) { alert(`Erro ao carregar auditorias: ${error.message}`); }
+            selectAuditoriaAtiva.value = valorAnterior;
+        } catch(error) {}
     }
-    async function importarPlanilha(event) {
+
+    async function carregarUltimaAtualizacao() {
+        try {
+            dataUltimaAtualizacaoEl.textContent = 'Carregando...';
+            const data = await apiFetch('/configuracao/ultima_atualizacao_estoque');
+            dataUltimaAtualizacaoEl.textContent = data;
+        } catch(e) {
+            dataUltimaAtualizacaoEl.textContent = "Erro ao carregar";
+        }
+    }
+
+    // --- LÓGICA DO FORMULÁRIO DE CRIAÇÃO ---
+    function alternarTodasCategorias() {
+        const checkboxes = containerCategoriasCheckbox.querySelectorAll('.categoria-checkbox');
+        checkboxes.forEach(checkbox => checkbox.checked = checkSelecionarTodas.checked);
+    }
+
+    async function salvarNovaAuditoriaComEscopo(event) {
         event.preventDefault();
-        const entidadeId = selectEntidadeImport.value;
-        const arquivo = inputArquivo.files[0];
-        if (!entidadeId || !arquivo) { alert('Selecione uma entidade e um arquivo.'); return; }
+        const responsavel = inputAuditoriaResponsavel.value.trim();
+        const entidadeId = selectAuditoriaEntidade.value;
+        const categoriasSelecionadas = Array.from(containerCategoriasCheckbox.querySelectorAll('input:checked')).map(cb => cb.value);
+
+        if (!responsavel || !entidadeId || categoriasSelecionadas.length === 0) {
+            alert('Responsável, Entidade e pelo menos uma Categoria são obrigatórios.');
+            return;
+        }
+        
+        const payload = { entidade_id: parseInt(entidadeId), responsavel: responsavel, categorias_escopo: categoriasSelecionadas };
+        
+        try {
+            const novaAuditoria = await apiFetch('/auditorias/nova_com_escopo/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            alert(`Auditoria "${novaAuditoria.nome}" (Código: ${novaAuditoria.codigo_referencia}) criada com sucesso!`);
+            formNovaAuditoriaEscopo.reset();
+            await carregarAuditoriasAtivas();
+            selectAuditoriaAtiva.value = novaAuditoria.id;
+            selectAuditoriaAtiva.dispatchEvent(new Event('change'));
+        } catch (error) {}
+    }
+
+    // --- LÓGICA DE IMPORTAÇÃO GERAL ---
+    async function importarEstoqueGeral(event) {
+        event.preventDefault();
+        const entidadeId = selectImportarEntidade.value;
+        const arquivo = inputPlanilhaGeral.files[0];
+        if (!entidadeId || !arquivo) {
+            alert('Selecione uma entidade e um arquivo para a importação geral.');
+            return;
+        }
         const formData = new FormData();
         formData.append('entidade_id', entidadeId);
         formData.append('file', arquivo);
+
         try {
-            const resultado = await apiFetch('/produtos/importar', { method: 'POST', body: formData });
+            const resultado = await apiFetch('/produtos/importar_geral', { method: 'POST', body: formData });
             alert(resultado.mensagem);
-            preencherCategoriasDropdown();
-            carregarRelatorioContagens();
-        } catch (error) { alert(`Erro ao importar planilha: ${error.message}`); }
+            formImportarGeral.reset();
+            await carregarCategoriasParaFormulario();
+            await carregarUltimaAtualizacao();
+        } catch (error) {}
     }
 
-    // --- Funções da CONTAGEM POR CATEGORIA ---
-    
-    // --- MUDANÇA AQUI: Nova função para apagar ---
-    window.apagarContagem = async function(contagemId) {
-        if (!confirm('Tem certeza que deseja apagar este registro de contagem?')) {
+    // --- LÓGICA DO PAINEL DA AUDITORIA ATIVA ---
+    async function exibirPainelAuditoria(event) {
+        auditoriaAtivaId = event.target.value;
+        if (!auditoriaAtivaId) {
+            painelAuditoriaAtiva.classList.add('d-none');
+            placeholderDetalhe.classList.remove('d-none');
             return;
         }
         try {
-            await apiFetch(`/contagens/categoria/${contagemId}`, {
-                method: 'DELETE'
-            });
-            alert('Registro apagado com sucesso!');
-            carregarRelatorioContagens(); // Atualiza a tabela
-        } catch(error) {
-            alert(`Erro ao apagar registro: ${error.message}`);
-        }
-    }
-
-    async function preencherCategoriasDropdown() {
-        try {
-            const categorias = await apiFetch('/categorias/');
-            const options = categorias.map(c => `<option value="${c}">${c}</option>`).join('');
-            selectCategoriaContagem.innerHTML = `<option value="">Selecione...</option>${options}`;
-            filtroCategoria.innerHTML = `<option value="">Todas</option>${options}`;
-        } catch (error) { alert(`Erro ao carregar categorias: ${error.message}`); }
-    }
-    async function atualizarEstoqueSistema() {
-        const categoria = selectCategoriaContagem.value;
-        const entidadeId = selectEntidadeContagem.value;
-        if (!categoria || !entidadeId) { inputQtdSistema.value = ''; return; }
-        try {
-            inputQtdSistema.value = 'Calculando...';
-            const data = await apiFetch(`/categorias/estoque/?entidade_id=${entidadeId}&categoria_nome=${categoria}`);
-            inputQtdSistema.value = data.qtd_sistema;
-        } catch (error) { alert(`Erro ao buscar estoque: ${error.message}`); inputQtdSistema.value = 'Erro'; }
-    }
-    async function salvarContagemCategoria(event) {
-        event.preventDefault();
-        const dados = {
-            data_contagem: inputDataContagem.value, responsavel: inputResponsavel.value.trim(),
-            categoria_nome: selectCategoriaContagem.value, qtd_sistema: parseInt(inputQtdSistema.value, 10),
-            qtd_contada: parseInt(inputQtdContada.value, 10), entidade_id: parseInt(selectEntidadeContagem.value, 10)
-        };
-        if (!dados.entidade_id || !dados.categoria_nome || !dados.responsavel) { alert('Responsável, Entidade e Categoria são obrigatórios.'); return; }
-        if (isNaN(dados.qtd_sistema) || isNaN(dados.qtd_contada)) { alert('Valores de quantidade inválidos.'); return; }
-        try {
-            await apiFetch('/contagens/categoria/', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
-            });
-            alert('Contagem salva com sucesso!');
-            formContagemCategoria.reset();
-            inputDataContagem.value = new Date().toISOString().split('T')[0];
-            inputQtdSistema.value = '';
-            carregarRelatorioContagens();
-        } catch(error) { alert(`Erro ao salvar contagem: ${error.message}`); }
-    }
-
-    // --- MUDANÇA AQUI: Lógica de renderização do relatório atualizada ---
-    async function carregarRelatorioContagens() {
-        const params = new URLSearchParams();
-        if (filtroData.value) params.append('data', filtroData.value);
-        if (filtroCategoria.value) params.append('categoria', filtroCategoria.value);
-        if (filtroEntidade.value) params.append('entidade_id', filtroEntidade.value);
-        if (filtroResponsavel.value) params.append('responsavel', filtroResponsavel.value.trim());
-        try {
-            const relatorio = await apiFetch(`/contagens/categoria/?${params.toString()}`);
-            tabelaRelatorioBody.innerHTML = '';
-            if (!relatorio.length) {
-                tabelaRelatorioBody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum registro encontrado.</td></tr>'; // colspan agora é 8
-                return;
+            const detalhes = await apiFetch(`/auditorias/${auditoriaAtivaId}`);
+            painelTitulo.textContent = `${detalhes.codigo_referencia}: ${detalhes.nome}`;
+            
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+            painelDataInicio.textContent = new Date(detalhes.data_inicio).toLocaleString('pt-BR', options);
+            
+            const isFinalizada = !!detalhes.data_fim;
+            
+            if (isFinalizada) {
+                painelDataFim.textContent = new Date(detalhes.data_fim).toLocaleString('pt-BR', options);
+                statusAuditoriaFinalizada.classList.remove('d-none');
+            } else {
+                painelDataFim.textContent = "Em andamento";
+                statusAuditoriaFinalizada.classList.add('d-none');
             }
-            relatorio.forEach(r => {
-                const diferencaClasse = r.diferenca !== 0 ? 'text-danger fw-bold' : '';
-                tabelaRelatorioBody.innerHTML += `
-                    <tr>
-                        <td>${new Date(r.data_contagem + 'T00:00:00').toLocaleDateString()}</td>
-                        <td>${r.entidade.nome}</td>
-                        <td>${r.categoria_nome}</td>
-                        <td>${r.responsavel}</td>
-                        <td>${r.qtd_sistema}</td>
-                        <td>${r.qtd_contada}</td>
-                        <td class="${diferencaClasse}">${r.diferenca}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" onclick="apagarContagem(${r.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } catch(error) { alert(`Erro ao carregar relatório: ${error.message}`); }
+            
+            btnFinalizarAuditoria.disabled = isFinalizada;
+            btnSalvarContagens.disabled = isFinalizada;
+
+            tabelaContagemManualBody.innerHTML = '';
+            if (detalhes.escopo.length > 0) {
+                detalhes.escopo.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.dataset.categoria = item.categoria_nome;
+                    const diferenca = item.qtd_contada - item.qtd_sistema;
+                    const diferencaClasse = diferenca < 0 ? 'diferenca-negativa' : (diferenca > 0 ? 'diferenca-positiva' : '');
+                    const disabledAttr = isFinalizada ? 'disabled' : '';
+                    row.innerHTML = `
+                        <td>${item.categoria_nome}</td>
+                        <td>${item.qtd_sistema}</td>
+                        <td><input type="number" class="form-control form-control-sm" value="${item.qtd_contada || ''}" placeholder="0" ${disabledAttr}></td>
+                        <td class="${diferencaClasse}">${diferenca}</td>
+                    `;
+                    tabelaContagemManualBody.appendChild(row);
+                });
+            } else {
+                tabelaContagemManualBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhuma categoria no escopo.</td></tr>';
+            }
+            placeholderDetalhe.classList.add('d-none');
+            painelAuditoriaAtiva.classList.remove('d-none');
+        } catch(error) {}
     }
 
-    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
-    inputDataContagem.value = new Date().toISOString().split('T')[0];
-    formImportar.addEventListener('submit', importarPlanilha);
-    formCriarAuditoria.addEventListener('submit', criarAuditoria);
-    selectEntidadeContagem.addEventListener('change', atualizarEstoqueSistema);
-    selectCategoriaContagem.addEventListener('change', atualizarEstoqueSistema);
-    formContagemCategoria.addEventListener('submit', salvarContagemCategoria);
-    formFiltrosContagem.addEventListener('submit', (e) => { e.preventDefault(); carregarRelatorioContagens(); });
-    btnLimparFiltros.addEventListener('click', () => { formFiltrosContagem.reset(); carregarRelatorioContagens(); });
+    async function salvarContagensManuais(event) {
+        event.preventDefault();
+        if (!auditoriaAtivaId) return alert("Nenhuma auditoria selecionada.");
+        const contagens = [];
+        const rows = tabelaContagemManualBody.querySelectorAll('tr');
+        rows.forEach(row => {
+            contagens.push({
+                categoria_nome: row.dataset.categoria,
+                qtd_contada: parseInt(row.querySelector('input[type="number"]').value) || 0
+            });
+        });
+        try {
+            await apiFetch(`/auditorias/${auditoriaAtivaId}/contagem_manual`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contagens: contagens })
+            });
+            alert('Contagens manuais salvas com sucesso!');
+            selectAuditoriaAtiva.dispatchEvent(new Event('change'));
+        } catch (error) {}
+    }
 
+    async function finalizarAuditoria() {
+        if (!auditoriaAtivaId) return alert("Nenhuma auditoria selecionada.");
+        if (!confirm("Tem certeza que deseja finalizar esta auditoria? Esta ação não pode ser desfeita e irá travar a edição.")) return;
+        try {
+            await apiFetch(`/auditorias/${auditoriaAtivaId}/finalizar`, { method: 'POST' });
+            alert("Auditoria finalizada com sucesso!");
+            selectAuditoriaAtiva.dispatchEvent(new Event('change'));
+        } catch (error) {}
+    }
+
+    async function exportarAuditoriaExcel() {
+        if (!auditoriaAtivaId) {
+            alert("Nenhuma auditoria selecionada.");
+            return;
+        }
+        const url = `/auditorias/${auditoriaAtivaId}/exportar_excel`;
+        window.open(url, '_blank');
+    }
+
+    // --- INICIALIZAÇÃO E EVENTOS ---
+    checkSelecionarTodas.addEventListener('change', alternarTodasCategorias);
+    formNovaAuditoriaEscopo.addEventListener('submit', salvarNovaAuditoriaComEscopo);
+    selectAuditoriaAtiva.addEventListener('change', exibirPainelAuditoria);
+    formContagemManual.addEventListener('submit', salvarContagensManuais);
+    formImportarGeral.addEventListener('submit', importarEstoqueGeral);
+    btnExportarExcel.addEventListener('click', exportarAuditoriaExcel);
+    btnFinalizarAuditoria.addEventListener('click', finalizarAuditoria);
+    
+    // Carregamento inicial
     carregarEntidades();
-    carregarAuditorias();
-    preencherCategoriasDropdown();
-    carregarRelatorioContagens();
+    carregarCategoriasParaFormulario();
+    carregarAuditoriasAtivas();
+    carregarUltimaAtualizacao();
 });
