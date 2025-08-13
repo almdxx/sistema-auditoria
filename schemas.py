@@ -4,15 +4,32 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
-# --- SCHEMAS: Entidade ---
-class EntidadeBase(BaseModel):
-    nome: str
+# --- SCHEMAS DE TOKEN E USUÁRIO ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
-class Entidade(EntidadeBase):
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+class UserBase(BaseModel):
+    username: str
+
+class UserCreate(UserBase):
+    password: str
+    entidade_id: int
+
+class UserInDB(UserBase):
     id: int
+    entidade_id: int
     model_config = ConfigDict(from_attributes=True)
 
-# --- SCHEMAS: Auditoria ---
+# --- OUTROS SCHEMAS ---
+class Entidade(BaseModel):
+    id: int
+    nome: str
+    model_config = ConfigDict(from_attributes=True)
+
 class AuditoriaScopeCreate(BaseModel):
     entidade_id: int
     responsavel: str
@@ -45,7 +62,6 @@ class AuditoriaParaLista(BaseModel):
     data_inicio: datetime
     model_config = ConfigDict(from_attributes=True)
 
-# --- SCHEMAS: Importação e Contagem Manual ---
 class ImportacaoResultado(BaseModel):
     sucesso: bool
     mensagem: str

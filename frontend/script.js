@@ -1,10 +1,11 @@
 // FILE: script.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // --- SELETORES DE ELEMENTOS ---
     const formNovaAuditoriaEscopo = document.getElementById('form-nova-auditoria-escopo');
     const inputAuditoriaResponsavel = document.getElementById('auditoria-responsavel');
     const selectAuditoriaEntidade = document.getElementById('auditoria-entidade-select');
+    const adminEntidadeContainer = document.getElementById('admin-entidade-container');
     const containerCategoriasCheckbox = document.getElementById('container-categorias-checkbox');
     const checkSelecionarTodas = document.getElementById('selecionar-todas-categorias');
     const selectAuditoriaAtiva = document.getElementById('auditoria-ativa-select');
@@ -23,17 +24,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnExportarExcel = document.getElementById('btn-exportar-excel');
     const btnFinalizarAuditoria = document.getElementById('btn-finalizar-auditoria');
     const statusAuditoriaFinalizada = document.getElementById('status-auditoria-finalizada');
+    const userInfoEl = document.getElementById('user-info');
+    const logoutButton = document.getElementById('logout-button');
 
+    // --- VARIÁVEIS DE ESTADO GLOBAL ---
     let auditoriasDisponiveis = [];
     let auditoriaAtivaId = null;
+    let currentUser = null;
 
-    // --- FUNÇÃO PRINCIPAL DE API ---
-    async function apiFetch(url, options = {}) {
+    // --- FUNÇÃO PRINCIPAL DE API (COM AUTENTICAÇÃO) ---
+    async function apiFetch(url, options = {}, isFile = false) {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            ...options.headers,
+        };
+        
+        if (!(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+        }
+
         try {
-            const response = await fetch(url, options);
+            const response = await fetch(url, { ...options, headers });
+
+            if (response.status === 401) {
+                localStorage.removeItem('accessToken');
+                window.location.href = '/login';
+                throw new Error('Sessão expirada. Por favor, faça login novamente.');
+            }
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ detail: response.statusText }));
                 throw new Error(errorData.detail || `Erro (Status: ${response.status})`);
+            }
+
+            if (isFile) {
+                return response;
             }
             return response.status === 204 ? null : await response.json();
         } catch (error) {
@@ -44,6 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNÇÕES DE CARREGAMENTO INICIAL ---
+    async function fetchCurrentUser() {
+        try {
+            currentUser = await apiFetch('/users/me');
+            if (userInfoEl) userInfoEl.textContent = `Olá, ${currentUser.username}`;
+            if (adminEntidadeContainer) {
+                if (currentUser.username === 'admin') {
+                    adminEntidadeContainer.classList.remove('d-none');
+                } else {
+                    adminEntidadeContainer.classList.add('d-none');
+                }
+            }
+        } catch (error) { /* apiFetch já lida com o redirecionamento */ }
+    }
+
     async function carregarEntidades() {
         try {
             const entidades = await apiFetch('/entidades/');
@@ -60,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function carregarCategoriasParaFormulario() {
         try {
+            if(!containerCategoriasCheckbox) return;
             containerCategoriasCheckbox.innerHTML = '<p class="text-muted">Carregando...</p>';
             const categorias = await apiFetch('/categorias/importadas/');
             if (categorias.length === 0) {
@@ -112,8 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function salvarNovaAuditoriaComEscopo(event) {
         event.preventDefault();
         const responsavel = inputAuditoriaResponsavel.value.trim();
-        const entidadeId = selectAuditoriaEntidade.value;
         const categoriasSelecionadas = Array.from(containerCategoriasCheckbox.querySelectorAll('input:checked')).map(cb => cb.value);
+
+        const entidadeId = (currentUser.username === 'admin') 
+            ? selectAuditoriaEntidade.value 
+            : currentUser.entidade_id;
 
         if (!responsavel || !entidadeId || categoriasSelecionadas.length === 0) {
             alert('Responsável, Entidade e pelo menos uma Categoria são obrigatórios.');
@@ -123,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = { entidade_id: parseInt(entidadeId), responsavel: responsavel, categorias_escopo: categoriasSelecionadas };
         
         try {
-            const novaAuditoria = await apiFetch('/auditorias/nova_com_escopo/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const novaAuditoria = await apiFetch('/auditorias/nova_com_escopo/', { method: 'POST', body: JSON.stringify(payload) });
             alert(`Auditoria "${novaAuditoria.nome}" (Código: ${novaAuditoria.codigo_referencia}) criada com sucesso!`);
             formNovaAuditoriaEscopo.reset();
             await carregarAuditoriasAtivas();
@@ -220,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await apiFetch(`/auditorias/${auditoriaAtivaId}/contagem_manual`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contagens: contagens })
             });
             alert('Contagens manuais salvas com sucesso!');
@@ -243,22 +291,49 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Nenhuma auditoria selecionada.");
             return;
         }
-        const url = `/auditorias/${auditoriaAtivaId}/exportar_excel`;
-        window.open(url, '_blank');
+        try {
+            const response = await apiFetch(`/auditorias/${auditoriaAtivaId}/exportar_excel`, {}, true);
+            const blob = await response.blob();
+            const auditoriaAtiva = auditoriasDisponiveis.find(a => a.id == auditoriaAtivaId);
+            const nomeArquivo = `${auditoriaAtiva.codigo_referencia}.xlsx`;
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", nomeArquivo);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            console.error("Falha no download da exportação:", error);
+        }
+    }
+
+    // --- LÓGICA DE LOGOUT ---
+    function logout() {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login';
     }
 
     // --- INICIALIZAÇÃO E EVENTOS ---
-    checkSelecionarTodas.addEventListener('change', alternarTodasCategorias);
-    formNovaAuditoriaEscopo.addEventListener('submit', salvarNovaAuditoriaComEscopo);
-    selectAuditoriaAtiva.addEventListener('change', exibirPainelAuditoria);
-    formContagemManual.addEventListener('submit', salvarContagensManuais);
-    formImportarGeral.addEventListener('submit', importarEstoqueGeral);
-    btnExportarExcel.addEventListener('click', exportarAuditoriaExcel);
-    btnFinalizarAuditoria.addEventListener('click', finalizarAuditoria);
+    if(checkSelecionarTodas) checkSelecionarTodas.addEventListener('change', alternarTodasCategorias);
+    if(formNovaAuditoriaEscopo) formNovaAuditoriaEscopo.addEventListener('submit', salvarNovaAuditoriaComEscopo);
+    if(selectAuditoriaAtiva) selectAuditoriaAtiva.addEventListener('change', exibirPainelAuditoria);
+    if(formContagemManual) formContagemManual.addEventListener('submit', salvarContagensManuais);
+    if(formImportarGeral) formImportarGeral.addEventListener('submit', importarEstoqueGeral);
+    if(btnExportarExcel) btnExportarExcel.addEventListener('click', exportarAuditoriaExcel);
+    if(btnFinalizarAuditoria) btnFinalizarAuditoria.addEventListener('click', finalizarAuditoria);
+    if(logoutButton) logoutButton.addEventListener('click', logout);
     
-    // Carregamento inicial
-    carregarEntidades();
-    carregarCategoriasParaFormulario();
-    carregarAuditoriasAtivas();
-    carregarUltimaAtualizacao();
+    // --- CARREGAMENTO INICIAL DA PÁGINA ---
+    async function init() {
+        await fetchCurrentUser();
+        if (currentUser) {
+            carregarEntidades();
+            carregarCategoriasParaFormulario();
+            carregarAuditoriasAtivas();
+            carregarUltimaAtualizacao();
+        }
+    }
+
+    init();
 });

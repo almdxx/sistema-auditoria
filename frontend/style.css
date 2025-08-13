@@ -1,20 +1,23 @@
 /* FILE: frontend/style.css */
 
-/* TEMA CLARO */
+/* TEMA CLARO (PADRÃO) */
 :root {
     --bs-body-bg: #f8f9fa;
     --bs-body-color: #212529;
+    --bs-body-color-rgb: 33, 37, 41;
     --bs-border-color: #dee2e6;
     --bs-secondary-bg: #e9ecef;
     --brand-color: #6f42c1;
     --brand-color-light: #8558d3;
     --bs-table-striped-bg: rgba(0, 0, 0, 0.03);
 }
-/* TEMA ESCURO */
+
+/* TEMA ESCURO (QUANDO O SISTEMA OPERACIONAL PEDE) */
 @media (prefers-color-scheme: dark) {
     :root {
         --bs-body-bg: #212529;
-        --bs-body-color: #f0f0f0; 
+        --bs-body-color: #ffffff;
+        --bs-body-color-rgb: 255, 255, 255;
         --bs-border-color: #495057;
         --bs-secondary-bg: #343a40;
         --brand-color: #8558d3; 
@@ -28,13 +31,20 @@
     }
 
     .text-muted {
-        color: rgba(240, 240, 240, 0.7) !important;
+        color: rgba(255, 255, 255, 0.75) !important;
     }
 }
 
 body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
+}
+
+main {
+    flex: 1;
 }
 
 .card, .navbar {
@@ -54,26 +64,43 @@ h1, h2, h3, h4, h5, .navbar-brand {
 }
 
 .nav-tabs .nav-link {
-    color: var(--bs-body-color); 
+    color: var(--bs-body-color);
     opacity: 0.7;
 }
 
 .nav-tabs .nav-link.active {
     background-color: var(--bs-body-bg);
-    border-bottom-color: var(--bs-body-bg) !important;
-    color: var(--brand-color);
+    border-color: var(--bs-border-color) var(--bs-border-color) var(--brand-color) !important;
+    border-bottom-width: 3px;
+    color: var(--bs-body-color) !important;
     font-weight: bold;
     opacity: 1;
 }
 
-.diferenca-negativa {
-    color: #ff5252;
-    font-weight: bold;
+.navbar-text {
+    color: var(--bs-body-color);
+    opacity: 0.9;
 }
-.diferenca-positiva {
-    color: #448aff;
-    font-weight: bold;
+
+.diferenca-negativa { color: #ff5252; font-weight: bold; }
+.diferenca-positiva { color: #448aff; font-weight: bold; }
+.diferenca-zero { color: #69f0ae; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--bs-secondary-bg) inset !important;
+    -webkit-text-fill-color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
-.diferenca-zero {
-    color: #69f0ae;
+
+.form-floating > label {
+    color: rgba(var(--bs-body-color-rgb), 0.65);
+}
+
+footer p {
+    font-size: 0.8rem;
+    opacity: 0.7;
 }
