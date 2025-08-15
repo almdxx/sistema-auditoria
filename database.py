@@ -11,8 +11,8 @@ load_dotenv()
 # Prioriza a URL de conexão completa (ideal para produção/Render)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Se não encontrar a URL completa, monta a partir das partes (ideal para local)
-if DATABASE_URL is None:
+# Se não encontrar a URL completa (ambiente local), monta a partir das partes
+if not DATABASE_URL:
     DB_USER = os.getenv("DB_USER")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     DB_HOST = os.getenv("DB_HOST", "localhost")
