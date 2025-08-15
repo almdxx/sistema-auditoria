@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 
+# --- MODELO: Entidade ---
 class Entidade(Base):
     __tablename__ = "entidades"
     id = Column(Integer, primary_key=True, index=True)
@@ -12,6 +13,7 @@ class Entidade(Base):
     auditorias = relationship("Auditoria", back_populates="entidade")
     usuarios = relationship("User", back_populates="entidade")
 
+# --- MODELO: User ---
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -20,6 +22,7 @@ class User(Base):
     entidade_id = Column(Integer, ForeignKey("entidades.id"), nullable=False)
     entidade = relationship("Entidade", back_populates="usuarios")
 
+# --- MODELO: Produto ---
 class Produto(Base):
     __tablename__ = "produtos"
     id = Column(Integer, primary_key=True, index=True)
@@ -27,6 +30,7 @@ class Produto(Base):
     grupo = Column(String, index=True)
     estoques = relationship("Estoque", back_populates="produto", cascade="all, delete-orphan")
 
+# --- MODELO: Estoque ---
 class Estoque(Base):
     __tablename__ = "estoques"
     id = Column(Integer, primary_key=True, index=True)
@@ -36,6 +40,7 @@ class Estoque(Base):
     produto = relationship("Produto", back_populates="estoques")
     entidade = relationship("Entidade", back_populates="estoques")
 
+# --- MODELO: Auditoria ---
 class Auditoria(Base):
     __tablename__ = "auditorias"
     id = Column(Integer, primary_key=True, index=True)
@@ -48,6 +53,7 @@ class Auditoria(Base):
     entidade = relationship("Entidade", back_populates="auditorias")
     escopo = relationship("EscopoAuditoria", back_populates="auditoria", cascade="all, delete-orphan")
 
+# --- MODELO: EscopoAuditoria ---
 class EscopoAuditoria(Base):
     __tablename__ = "escopo_auditoria"
     id = Column(Integer, primary_key=True, index=True)
@@ -59,6 +65,7 @@ class EscopoAuditoria(Base):
     data_contagem = Column(DateTime(timezone=True), nullable=True)
     auditoria = relationship("Auditoria", back_populates="escopo")
 
+# --- MODELO: Configuracao ---
 class Configuracao(Base):
     __tablename__ = "configuracao"
     chave = Column(String, primary_key=True)

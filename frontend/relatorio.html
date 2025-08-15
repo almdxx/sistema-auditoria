@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Geral - Módulo de Auditoria</title>
+    <script>
+        if (!localStorage.getItem('accessToken')) { window.location.href = '/login'; }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Módulo de Auditoria</a>
+            <div class="d-flex align-items-center">
+                <a href="/" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Voltar ao Dashboard</a>
+                <span id="user-info" class="navbar-text me-3"></span>
+                <button id="logout-button" class="btn btn-outline-secondary btn-sm">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Relatório Geral de Diferenças</h2>
+        </div>
+        
+        <div id="erro-placeholder" class="d-none"></div>
+
+        <div id="relatorio-container">
+            <div class="row g-4 mb-4" id="sumario-container"></div>
+
+            <div class="row g-4">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Gráfico de Diferenças Consolidadas</h5>
+                            <div class="chart-container">
+                                <canvas id="grafico-diferencas-gerais"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Tabela Detalhada de Diferenças</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Categoria</th>
+                                            <th>Total Sistema</th>
+                                            <th>Total Contado</th>
+                                            <th>Diferença Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-diferencas-gerais"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="mt-auto py-3 text-center">
+        <p class="text-muted mb-0">&copy; 2025 | Desenvolvido por Carlos Eduardo</p>
+    </footer>
+
+    <script src="/static/relatorio.js"></script>
+</body>
+</html>

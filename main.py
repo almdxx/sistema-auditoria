@@ -13,7 +13,7 @@ import os
 import crud, models, schemas, auth, security
 from database import SessionLocal, engine, Base
 
-# --- CONFIGURAÇÃO DA APLICAÇÃO E BANCO DE DADOS ---
+# --- CONFIGURAÇÃO DA APLICAÇÃO ---
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Módulo de Auditoria")
 
@@ -23,11 +23,15 @@ app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 @app.get("/", response_class=FileResponse, include_in_schema=False)
 async def serve_index():
-    return os.path.join(frontend_dir, "index.html")
+    return FileResponse(os.path.join(frontend_dir, "index.html"))
 
 @app.get("/login", response_class=FileResponse, include_in_schema=False)
 async def serve_login_page():
-    return os.path.join(frontend_dir, "login.html")
+    return FileResponse(os.path.join(frontend_dir, "login.html"))
+    
+@app.get("/relatorio.html", response_class=FileResponse, include_in_schema=False)
+async def serve_relatorio_page():
+    return FileResponse(os.path.join(frontend_dir, "relatorio.html"))
 
 # --- DEPENDÊNCIA DE BANCO DE DADOS ---
 def get_db():
@@ -109,22 +113,50 @@ def exportar_auditoria_excel_api(auditoria_id: int, db: Session = Depends(get_db
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@app.get("/relatorios/diferencas_consolidadas", response_model=List[schemas.RelatorioDiferenca])
+def get_relatorio_diferencas_consolidadas(
+    entidade_id: Optional[int] = None, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    if current_user.username != 'admin':
+        id_alvo = current_user.entidade_id
+    else:
+        id_alvo = entidade_id
+    
+    return crud.get_diferencas_consolidadas(db, entidade_id=id_alvo)
+
 @app.post("/produtos/importar_geral", response_model=schemas.ImportacaoResultado)
-async def importar_planilha_geral(db: Session = Depends(get_db), file: UploadFile = File(...), entidade_id: int = Form(...), current_user: models.User = Depends(auth.get_current_user)):
+async def importar_planilha_geral(
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(auth.get_current_user),
+    file: UploadFile = File(...), 
+    entidade_id: Optional[int] = Form(None)
+):
+    
+    id_entidade_alvo = None
+    if current_user.username == 'admin':
+        if entidade_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O administrador deve selecionar uma entidade para a importação."
+            )
+        id_entidade_alvo = entidade_id
+    else:
+        id_entidade_alvo = current_user.entidade_id
+
     try:
         df = pd.read_excel(file.file)
         if 'Item' not in df.columns or 'Estoque atual' not in df.columns: 
-            raise HTTPException(status_code=400, detail="Planilha inválida.")
+            raise HTTPException(status_code=400, detail="Planilha inválida. Verifique as colunas 'Item' e 'Estoque atual'.")
         
         produtos_criados, estoques_atualizados = 0, 0
         for _, row in df.iterrows():
             item_bruto = row['Item']
-            if pd.isna(item_bruto):
-                continue
+            if pd.isna(item_bruto): continue
             
             nome_item = str(item_bruto).strip()
-            if nome_item == '': 
-                continue
+            if nome_item == '': continue
 
             estoque_atual = row['Estoque atual']
             quantidade_final = 0 if pd.isna(estoque_atual) else int(estoque_atual)
@@ -136,11 +168,11 @@ async def importar_planilha_geral(db: Session = Depends(get_db), file: UploadFil
                 db.flush()
                 produtos_criados += 1
             
-            estoque = db.query(models.Estoque).filter_by(produto_id=produto.id, entidade_id=entidade_id).first()
+            estoque = db.query(models.Estoque).filter_by(produto_id=produto.id, entidade_id=id_entidade_alvo).first()
             if estoque:
                 estoque.quantidade_sistema = quantidade_final
             else:
-                db.add(models.Estoque(produto_id=produto.id, entidade_id=entidade_id, quantidade_sistema=quantidade_final))
+                db.add(models.Estoque(produto_id=produto.id, entidade_id=id_entidade_alvo, quantidade_sistema=quantidade_final))
             estoques_atualizados += 1
         
         crud.set_ultima_atualizacao_estoque(db)
@@ -149,4 +181,4 @@ async def importar_planilha_geral(db: Session = Depends(get_db), file: UploadFil
         return schemas.ImportacaoResultado(sucesso=True, mensagem=mensagem)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Ocorreu um erro: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ocorreu um erro inesperado: {str(e)}")

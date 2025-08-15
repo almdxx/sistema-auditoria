@@ -33,6 +33,23 @@
     .text-muted {
         color: rgba(255, 255, 255, 0.75) !important;
     }
+
+    /* --- CORREÇÕES PARA O MODO ESCURO --- */
+    .card, .card .card-title, .card .card-text, .card .h2 {
+        color: var(--bs-body-color) !important;
+    }
+    
+    .card .text-success {
+        color: var(--bs-success-text-emphasis) !important;
+    }
+    .card .text-danger {
+        color: var(--bs-danger-text-emphasis) !important;
+    }
+
+    .table thead {
+        color: var(--bs-body-color);
+        opacity: 0.8;
+    }
 }
 
 body {
@@ -50,10 +67,15 @@ main {
 .card, .navbar {
     background-color: var(--bs-secondary-bg) !important;
     border-color: var(--bs-border-color) !important;
+    transition: box-shadow 0.2s ease-in-out;
 }
 
 h1, h2, h3, h4, h5, .navbar-brand {
     color: var(--brand-color);
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
 }
 
 .btn-primary {
@@ -82,10 +104,6 @@ h1, h2, h3, h4, h5, .navbar-brand {
     opacity: 0.9;
 }
 
-.diferenca-negativa { color: #ff5252; font-weight: bold; }
-.diferenca-positiva { color: #448aff; font-weight: bold; }
-.diferenca-zero { color: #69f0ae; }
-
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
@@ -103,4 +121,121 @@ input:-webkit-autofill:active {
 footer p {
     font-size: 0.8rem;
     opacity: 0.7;
+}
+
+/* ESTILOS PARA NOTIFICAÇÃO TOAST */
+.toast-container {
+    z-index: 1100;
+}
+
+/* ESTILO PARA A CENTRAL DE NOTIFICAÇÕES */
+#central-notificacoes ul {
+    padding-left: 0;
+    list-style: none;
+    font-size: 0.9rem;
+}
+
+#central-notificacoes li {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    display: flex;
+    align-items: center;
+}
+
+#central-notificacoes li:last-child {
+    border-bottom: none;
+}
+
+#central-notificacoes .bi {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+}
+
+/* ESTILOS PARA DESTAQUE DE DIFERENÇAS NA TABELA */
+.table > tbody > tr {
+    transition: background-color 0.3s ease-in-out;
+}
+
+tr.diferenca-negativa {
+    background-color: rgba(255, 99, 132, 0.15);
+}
+tr.diferenca-positiva {
+    background-color: rgba(54, 162, 235, 0.15);
+}
+tr.diferenca-zero {
+    background-color: rgba(75, 192, 192, 0.15);
+}
+
+.diferenca-icone {
+    margin-right: 0.5rem;
+}
+
+.contagem-cell {
+    display: flex;
+    align-items: center;
+}
+
+.recontagem-aviso {
+    margin-left: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fd7e14;
+    white-space: nowrap;
+}
+
+.recontagem-aviso .bi {
+    vertical-align: middle;
+}
+
+/* Limita a altura do contêiner do gráfico */
+.chart-container {
+    position: relative;
+    height: auto;
+    max-height: 500px;
+}
+
+/* Lógica de Visualização de Painel */
+#painel-auditoria-ativa {
+    display: none;
+}
+#placeholder-detalhe {
+    display: block;
+}
+body.modo-detalhes #painel-auditoria-ativa {
+    display: block;
+}
+body.modo-detalhes #placeholder-detalhe {
+    display: none;
+}
+
+/* --- NOVOS ESTILOS PARA O DASHBOARD DE RELATÓRIO --- */
+.card-sumario {
+    color: #fff !important;
+    border: none;
+}
+.card-sumario .card-title, .card-sumario .card-text {
+    color: #fff !important;
+    opacity: 0.9;
+}
+.card-sumario .h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #fff !important;
+}
+.card-sumario-icone {
+    font-size: 2rem;
+    opacity: 0.5;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.card-diferencas {
+    background: linear-gradient(45deg, #6f42c1, #8558d3) !important;
+}
+.card-sobra {
+    background: linear-gradient(45deg, #198754, #28a745) !important;
+}
+.card-falta {
+    background: linear-gradient(45deg, #dc3545, #e85a67) !important;
 }

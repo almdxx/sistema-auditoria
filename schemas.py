@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
-# --- SCHEMAS DE TOKEN E USUÁRIO ---
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -24,16 +23,15 @@ class UserInDB(UserBase):
     entidade_id: int
     model_config = ConfigDict(from_attributes=True)
 
-# --- OUTROS SCHEMAS ---
 class Entidade(BaseModel):
     id: int
     nome: str
     model_config = ConfigDict(from_attributes=True)
 
 class AuditoriaScopeCreate(BaseModel):
-    entidade_id: int
     responsavel: str
     categorias_escopo: List[str]
+    entidade_id: Optional[int] = None
 
 class EscopoAuditoriaSchema(BaseModel):
     categoria_nome: str
@@ -73,3 +71,10 @@ class ContagemManualItem(BaseModel):
 
 class ContagemManualCreate(BaseModel):
     contagens: List[ContagemManualItem]
+
+class RelatorioDiferenca(BaseModel):
+    categoria_nome: str
+    total_sistema: int
+    total_contada: int
+    diferenca_total: int
+    model_config = ConfigDict(from_attributes=True)

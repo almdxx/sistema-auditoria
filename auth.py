@@ -11,10 +11,6 @@ from database import get_db
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """
-    Decodifica o token, valida e retorna o usuário do banco de dados.
-    Esta função será a nossa "barreira" de proteção nas rotas.
-    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

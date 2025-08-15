@@ -1,6 +1,4 @@
-// FILE: frontend/login.js
 document.addEventListener('DOMContentLoaded', () => {
-    // Redireciona se já houver um token
     if (localStorage.getItem('accessToken')) {
         window.location.href = '/';
     }
@@ -36,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             localStorage.setItem('accessToken', data.access_token);
-            window.location.href = '/'; // Redireciona para a aplicação principal
+            window.location.href = '/';
 
         } catch (error) {
             errorMessage.textContent = error.message;

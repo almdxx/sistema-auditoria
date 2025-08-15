@@ -9,9 +9,9 @@ import io
 import pandas as pd
 import unicodedata
 
-import models, schemas, security
+import models, schemas
 
-# --- FUNÇÃO AUXILIAR PARA NORMALIZAÇÃO ---
+# --- FUNÇÃO AUXILIAR ---
 def normalize_string(s: str) -> str:
     if not s: return ""
     s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
@@ -23,10 +23,6 @@ def get_user_by_username(db: Session, username: str):
 
 # --- FUNÇÕES GERAIS ---
 def listar_entidades(db: Session, user: models.User) -> List[models.Entidade]:
-    """
-    Lista entidades. Se o usuário for 'admin', retorna todas.
-    Caso contrário, retorna apenas a entidade associada ao usuário.
-    """
     if user.username == 'admin':
         return db.query(models.Entidade).order_by(models.Entidade.nome).all()
     else:
@@ -51,10 +47,14 @@ def calcular_estoque_por_categoria(db: Session, entidade_id: int, categoria_nome
                       .scalar())
     return total_estoque or 0
 
-# --- FUNÇÕES DE AUDITORIA (COM CONTROLE DE ACESSO) ---
+# --- FUNÇÕES DE AUDITORIA ---
 def criar_auditoria_com_escopo(db: Session, auditoria_data: schemas.AuditoriaScopeCreate, user: models.User) -> models.Auditoria:
-    entidade_id = auditoria_data.entidade_id
-    if user.username != 'admin':
+    entidade_id = None
+    if user.username == 'admin':
+        if not auditoria_data.entidade_id:
+            raise ValueError("Admin deve selecionar uma entidade para criar a auditoria.")
+        entidade_id = auditoria_data.entidade_id
+    else:
         entidade_id = user.entidade_id
 
     entidade = db.query(models.Entidade).filter(models.Entidade.id == entidade_id).first()
@@ -136,7 +136,46 @@ def exportar_auditoria_excel(db: Session, auditoria_id: int, user: models.User) 
     auditoria = get_auditoria_detalhes(db, auditoria_id, user)
     if not auditoria: return None
 
-    return io.BytesIO() # Placeholder
+    fuso_horario_sp = ZoneInfo('America/Sao_Paulo')
+    
+    dados_cabecalho = {
+        "Campo": [ "Código da Auditoria", "Nome", "Entidade", "Responsável", "Data de Início", "Data de Fim" ],
+        "Valor": [
+            auditoria.codigo_referencia,
+            auditoria.nome,
+            auditoria.entidade.nome,
+            auditoria.responsavel,
+            auditoria.data_inicio.astimezone(fuso_horario_sp).strftime('%d/%m/%Y %H:%M:%S'),
+            auditoria.data_fim.astimezone(fuso_horario_sp).strftime('%d/%m/%Y %H:%M:%S') if auditoria.data_fim else "Em aberto"
+        ]
+    }
+    df_cabecalho = pd.DataFrame(dados_cabecalho)
+
+    dados_contagem = [
+        {
+            "Categoria": item.categoria_nome,
+            "Qtd. Sistema": item.qtd_sistema,
+            "Qtd. Contada": item.qtd_contada,
+            "Diferença": item.diferenca
+        }
+        for item in sorted(auditoria.escopo, key=lambda x: x.categoria_nome)
+    ]
+    df_contagem = pd.DataFrame(dados_contagem)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_cabecalho.to_excel(writer, sheet_name='Relatorio_Auditoria', index=False, header=False, startrow=0)
+        df_contagem.to_excel(writer, sheet_name='Relatorio_Auditoria', index=False, startrow=len(dados_cabecalho) + 2)
+
+        worksheet = writer.sheets['Relatorio_Auditoria']
+        worksheet.column_dimensions['A'].width = 30
+        worksheet.column_dimensions['B'].width = 30
+        if not df_contagem.empty:
+            for col_letter in ['C', 'D', 'E']:
+                worksheet.column_dimensions[col_letter].width = 15
+
+    output.seek(0)
+    return output
 
 # --- FUNÇÕES DE CONFIGURAÇÃO ---
 def get_ultima_atualizacao_estoque(db: Session) -> str:
@@ -150,3 +189,39 @@ def set_ultima_atualizacao_estoque(db: Session):
         config.valor = now_sp
     else:
         db.add(models.Configuracao(chave="ultima_atualizacao_estoque", valor=now_sp))
+
+# --- FUNÇÕES DE RELATÓRIO ---
+def get_diferencas_consolidadas(db: Session, entidade_id: Optional[int] = None):
+    """
+    Calcula as diferenças agregadas de todas as auditorias finalizadas,
+    agrupadas por categoria. Pode ser filtrado por entidade.
+    """
+    query = (
+        db.query(
+            models.EscopoAuditoria.categoria_nome,
+            func.sum(models.EscopoAuditoria.qtd_sistema).label("total_sistema"),
+            func.sum(models.EscopoAuditoria.qtd_contada).label("total_contada")
+        )
+        .join(models.Auditoria, models.EscopoAuditoria.auditoria_id == models.Auditoria.id)
+        .filter(models.Auditoria.data_fim.isnot(None)) # Apenas auditorias finalizadas
+    )
+
+    if entidade_id:
+        query = query.filter(models.Auditoria.entidade_id == entidade_id)
+
+    resultados = query.group_by(models.EscopoAuditoria.categoria_nome).all()
+
+    diferencas_formatadas = []
+    for nome, sistema, contada in resultados:
+        diferenca = (contada or 0) - (sistema or 0)
+        if diferenca != 0:
+            diferencas_formatadas.append({
+                "categoria_nome": nome,
+                "total_sistema": int(sistema) if sistema is not None else 0,
+                "total_contada": int(contada) if contada is not None else 0,
+                "diferenca_total": int(diferenca)
+            })
+            
+    diferencas_formatadas.sort(key=lambda x: abs(x['diferenca_total']), reverse=True)
+    
+    return diferencas_formatadas

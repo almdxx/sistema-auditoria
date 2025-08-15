@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="/static/style.css">
     <style>
         html, body { height: 100%; }
-        body { display: flex; align-items: center; padding-top: 40px; padding-bottom: 40px; }
-        .form-signin { max-width: 330px; padding: 1rem; }
+        body { display: flex; flex-direction: column; align-items: center; }
+        .form-signin { max-width: 330px; padding: 1rem; margin: auto; }
     </style>
 </head>
 <body>
@@ -19,7 +19,7 @@
             <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
             <div class="form-floating">
                 <input type="text" class="form-control" id="username" placeholder="Usuário" required autofocus>
-                <label for="username">Login</label>
+                <label for="username">Usuário</label>
             </div>
             <div class="form-floating mt-2">
                 <input type="password" class="form-control" id="password" placeholder="Senha" required>
@@ -28,6 +28,11 @@
             <button id="login-button" class="btn btn-primary w-100 py-2 mt-3" type="submit">Entrar</button>
         </form>
     </main>
+
+    <footer class="mt-auto py-3 text-center">
+        <p class="text-muted mb-0">&copy; 2025 | Desenvolvido por Carlos Eduardo</p>
+    </footer>
+
     <script src="/static/login.js"></script>
 </body>
 </html>
