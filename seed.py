@@ -1,74 +1,83 @@
-# FILE: seed.py
+# FILE: seed.py (Versão GLOBAL - Correta com Emails)
 
-from database import SessionLocal, engine
-from models import Base, Entidade, User
+from database import SessionLocal, engine, Base
+from models import Organizacao, Entidade, User
 from security import get_password_hash
-import secrets
-import string
+import sys
 
+# Cria as tabelas (garante que existam)
 Base.metadata.create_all(bind=engine)
+
 db = SessionLocal()
 
-def gerar_senha_aleatoria(tamanho=6):
-    """Gera uma senha numérica aleatória de 6 dígitos."""
-    alfabeto = string.digits
-    return ''.join(secrets.choice(alfabeto) for i in range(tamanho))
+try:
+    print("Iniciando o seeding do banco de dados GLOBAL...")
 
-# --- Lista de Entidades ---
-entidades_para_criar = [
-    "Matriz", "iguatemi", "moinhos", "outlet"
-]
-
-print("Iniciando o seeding do banco de dados...")
-entidades_db = {} 
-
-# --- 1. Cria as Entidades ---
-for nome_entidade in entidades_para_criar:
-    entidade_existente = db.query(Entidade).filter(Entidade.nome == nome_entidade).first()
-    if not entidade_existente:
-        nova_entidade = Entidade(nome=nome_entidade)
-        db.add(nova_entidade)
+    # 1. Criar a Organização (O Cliente)
+    org_nome = "Spirito Santo"
+    org = db.query(Organizacao).filter(Organizacao.nome == org_nome).first()
+    if not org:
+        org = Organizacao(nome=org_nome)
+        db.add(org)
         db.commit()
-        db.refresh(nova_entidade)
-        print(f"✅ Entidade '{nome_entidade}' criada.")
-        entidades_db[nome_entidade] = nova_entidade
+        db.refresh(org)
+        print(f"✅ Organização '{org.nome}' criada (ID: {org.id}).")
     else:
-        print(f"⚠️ Entidade '{nome_entidade}' já existe.")
-        entidades_db[nome_entidade] = entidade_existente
+        print(f"⚠️  Organização '{org.nome}' já existe (ID: {org.id}).")
 
-# --- 2. Cria os Usuários das Lojas ---
-for nome_entidade in ["iguatemi", "moinhos", "outlet"]:
-    usuario_existente = db.query(User).filter(User.username == nome_entidade).first()
-    if not usuario_existente:
-        senha_texto_puro = gerar_senha_aleatoria()
-        senha_hash = get_password_hash(senha_texto_puro)
-        entidade_loja = entidades_db[nome_entidade]
-        novo_usuario = User(
-            username=nome_entidade, 
-            hashed_password=senha_hash,
-            entidade_id=entidade_loja.id
+    # 2. Criar a Entidade (Loja Matriz)
+    entidade_nome = "Matriz"
+    matriz = db.query(Entidade).filter(Entidade.nome == entidade_nome, Entidade.organizacao_id == org.id).first()
+    if not matriz:
+        matriz = Entidade(nome=entidade_nome, organizacao_id=org.id)
+        db.add(matriz)
+        db.commit()
+        db.refresh(matriz)
+        print(f"✅ Entidade '{matriz.nome}' criada para a organização '{org.nome}'.")
+    else:
+        print(f"⚠️  Entidade '{matriz.nome}' já existe.")
+
+    # 3. Criar o Usuário ADMIN (com email)
+    admin_user = "admin@spiritosanto.com" # <<< USA EMAIL AGORA
+    admin_pass = "123" # Mantenha ou altere a senha
+    user_admin = db.query(User).filter(User.username == admin_user).first()
+    if not user_admin:
+        admin_hash = get_password_hash(admin_pass)
+        novo_admin = User(
+            username=admin_user, # <<< USA EMAIL AGORA
+            hashed_password=admin_hash,
+            role="admin",
+            organizacao_id=org.id,
+            entidade_id=None
         )
-        db.add(novo_usuario)
-        print(f"👤 Usuário '{nome_entidade}' criado com a senha: {senha_texto_puro}")
+        db.add(novo_admin)
+        print(f"👑 Usuário '{admin_user}' criado com a senha: {admin_pass}")
     else:
-        print(f"👤 Usuário '{nome_entidade}' já existe.")
+        print(f"👑 Usuário '{admin_user}' já existe.")
 
-# --- 3. Cria o Usuário Admin ---
-usuario_admin_existente = db.query(User).filter(User.username == "admin").first()
-if not usuario_admin_existente:
-    senha_texto_puro_admin = "123456"
-    senha_hash_admin = get_password_hash(senha_texto_puro_admin)
-    entidade_matriz = entidades_db["Matriz"]
-    admin_user = User(
-        username="admin",
-        hashed_password=senha_hash_admin,
-        entidade_id=entidade_matriz.id
-    )
-    db.add(admin_user)
-    print(f"👑 Usuário admin criado com a senha padrão: {senha_texto_puro_admin}")
-else:
-    print(f"👑 Usuário admin já existe.")
+    # 4. Criar um Usuário LOJA (Exemplo com email)
+    loja_user = "loja@spiritosanto.com" # <<< USA EMAIL AGORA
+    loja_pass = "123" # Mantenha ou altere a senha
+    user_loja = db.query(User).filter(User.username == loja_user).first()
+    if not user_loja:
+        loja_hash = get_password_hash(loja_pass)
+        novo_loja = User(
+            username=loja_user, # <<< USA EMAIL AGORA
+            hashed_password=loja_hash,
+            role="user",
+            organizacao_id=org.id,
+            entidade_id=matriz.id # Associa à Matriz
+        )
+        db.add(novo_loja)
+        print(f"👤 Usuário '{loja_user}' criado com a senha: {loja_pass}")
+    else:
+        print(f"👤 Usuário '{loja_user}' já existe.")
 
-db.commit()
-print("\nSeeding concluído!")
-db.close()
+    db.commit()
+    print("\nSeeding global concluído!")
+
+except Exception as e:
+    print(f"\nERRO durante o seeding: {e}")
+    db.rollback()
+finally:
+    db.close()

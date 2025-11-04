@@ -8,16 +8,16 @@ import os
 load_dotenv()
 
 # --- CONFIGURAÇÃO DO BANCO DE DADOS ---
-# Prioriza a URL de conexão completa (ideal para produção/Render)
+# Prioriza a URL de conexão completa
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Se não encontrar a URL completa (ambiente local), monta a partir das partes
 if not DATABASE_URL:
     DB_USER = os.getenv("DB_USER")
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "5432")
     DB_NAME = os.getenv("DB_NAME")
+    # Usa o DB_NAME do .env que é 'auditoria_py'
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 

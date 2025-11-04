@@ -1,4 +1,5 @@
 /* FILE: frontend/style.css */
+/* (Versão CORRIGIDA - Garante card claro na página de signup escura) */
 
 /* TEMA CLARO (PADRÃO) */
 :root {
@@ -7,9 +8,11 @@
     --bs-body-color-rgb: 33, 37, 41;
     --bs-border-color: #dee2e6;
     --bs-secondary-bg: #e9ecef;
-    --brand-color: #6f42c1;
-    --brand-color-light: #8558d3;
+    --brand-color: #6f42c1; /* Roxo principal */
+    --brand-color-rgb: 111, 66, 193; /* RGB do Roxo principal */
+    --brand-color-light: #8558d3; /* Roxo mais claro */
     --bs-table-striped-bg: rgba(0, 0, 0, 0.03);
+    --bs-table-striped-color: var(--bs-body-color);
 }
 
 /* TEMA ESCURO (QUANDO O SISTEMA OPERACIONAL PEDE) */
@@ -19,223 +22,337 @@
         --bs-body-color: #ffffff;
         --bs-body-color-rgb: 255, 255, 255;
         --bs-border-color: #495057;
-        --bs-secondary-bg: #343a40;
-        --brand-color: #8558d3; 
+        --bs-secondary-bg: #343a40; /* Cinza escuro para cards GERAIS */
+        --brand-color: #8558d3;
+        --brand-color-rgb: 133, 88, 211;
         --brand-color-light: #9a73e1;
         --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+        --bs-table-striped-color: var(--bs-body-color);
+
+        --bs-danger-text-emphasis-dark: #f87171;
+        --bs-primary-text-emphasis-dark: #6ea8fe;
     }
 
-    .table {
+    /* Estilos GERAIS para modo escuro */
+    .table { /* Tabela escura */
         --bs-table-color: var(--bs-body-color);
         --bs-table-border-color: var(--bs-border-color);
+        --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
+        --bs-table-striped-color: var(--bs-body-color);
     }
-
-    .text-muted {
-        color: rgba(255, 255, 255, 0.75) !important;
-    }
-
-    /* --- CORREÇÕES PARA O MODO ESCURO --- */
-    .card, .card .card-title, .card .card-text, .card .h2 {
+    .text-muted { color: rgba(255, 255, 255, 0.75) !important; }
+    /* Aplica a cards GERAIS, modais, offcanvas, mas NÃO ao signup-card */
+    .card:not(.signup-card), .modal-content, .offcanvas {
+        background-color: var(--bs-secondary-bg) !important;
+        border-color: var(--bs-border-color) !important;
         color: var(--bs-body-color) !important;
     }
-    
-    .card .text-success {
-        color: var(--bs-success-text-emphasis) !important;
+    .card:not(.signup-card) .card-title, .card:not(.signup-card) .card-text,
+    .card:not(.signup-card) .h2, .modal-title, .offcanvas-title {
+        color: var(--bs-body-color) !important;
     }
-    .card .text-danger {
-        color: var(--bs-danger-text-emphasis) !important;
-    }
+    /* ... (outros estilos dark mode gerais para .card .text-*, .table thead, .btn-close, etc) ... */
+     .card:not(.signup-card) .text-success { color: var(--bs-success-text-emphasis) !important; }
+     .card:not(.signup-card) .text-danger, .modal-body .text-danger, .alert-danger { color: var(--bs-danger-text-emphasis-dark) !important; }
+     .card:not(.signup-card) .text-primary { color: var(--bs-primary-text-emphasis-dark) !important; }
+     .table thead { color: var(--bs-body-color); opacity: 0.8; }
+     .offcanvas-header .btn-close, .modal-header .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+     #painel-aviso-estoque .text-success .bi, #painel-aviso-estoque .text-success h4 { color: #86efac !important; }
+     #painel-aviso-estoque .text-danger .bi, #painel-aviso-estoque .text-danger h4 { color: var(--bs-danger-text-emphasis-dark) !important; }
+     .form-text { color: rgba(255, 255, 255, 0.65); }
+     .text-danger { color: var(--bs-danger-text-emphasis-dark) !important; }
+     .text-primary { color: var(--bs-primary-text-emphasis-dark) !important; }
 
-    .table thead {
+     /* Formulários escuros (exceto dentro do signup-card) */
+     body:not(.signup-page) .form-control, body:not(.signup-page) .form-select,
+     .modal .form-control, .modal .form-select, /* Garante forms escuros em modais */
+     .offcanvas .form-control, .offcanvas .form-select {
+         background-color: #343a40;
+         color: var(--bs-body-color);
+         border-color: var(--bs-border-color);
+     }
+      body:not(.signup-page) .form-control:focus, body:not(.signup-page) .form-select:focus,
+      .modal .form-control:focus, .modal .form-select:focus,
+      .offcanvas .form-control:focus, .offcanvas .form-select:focus {
+         background-color: #343a40;
+         color: var(--bs-body-color);
+         border-color: var(--brand-color);
+         box-shadow: 0 0 0 0.25rem rgba(var(--brand-color-rgb), 0.25);
+     }
+     body:not(.signup-page) .form-control::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+     /* TomSelect Dark Mode (exceto signup) */
+      body:not(.signup-page) .ts-control, .modal .ts-control { /* Adicionado modal */
+          background-color: #343a40 !important;
+          border-color: var(--bs-border-color) !important;
+          color: var(--bs-body-color) !important;
+     }
+      body:not(.signup-page) .ts-dropdown, .modal .ts-dropdown { /* Adicionado modal */
+          background-color: #343a40 !important;
+          border-color: var(--bs-border-color) !important;
+          color: var(--bs-body-color) !important;
+     }
+      body:not(.signup-page) .ts-control > input, .modal .ts-control > input { /* Adicionado modal */
+         color: var(--bs-body-color) !important;
+     }
+      body:not(.signup-page) .ts-dropdown .active, .modal .ts-dropdown .active { /* Adicionado modal */
+         background-color: var(--brand-color) !important;
+         color: #fff !important;
+     }
+      body:not(.signup-page) .ts-dropdown .option:hover, .modal .ts-dropdown .option:hover { /* Adicionado modal */
+        background-color: rgba(var(--brand-color-rgb), 0.25) !important;
+     }
+
+     /* Botão file input DARK (exceto signup) */
+    body:not(.signup-page) .form-control::file-selector-button {
+        background-color: #495057;
         color: var(--bs-body-color);
-        opacity: 0.8;
+        border-color: var(--bs-border-color);
+        transition: background-color .15s ease-in-out, border-color .15s ease-in-out;
     }
-}
+    body:not(.signup-page) .form-control:hover:not(:disabled):not([readonly])::file-selector-button {
+        background-color: #5a6268;
+    }
 
+    /* Footer na página signup escura */
+    body.signup-page .signup-footer { color: rgba(255, 255, 255, 0.6); }
+    body.signup-page .signup-footer p { color: rgba(255, 255, 255, 0.5); }
+
+
+} /* Fim do @media dark */
+
+/* ESTILOS GERAIS (Aplicam-se a Claro e Escuro) */
 body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: 'Poppins', sans-serif;
 }
-
-main {
-    flex: 1;
-}
-
-.card, .navbar {
-    background-color: var(--bs-secondary-bg) !important;
-    border-color: var(--bs-border-color) !important;
+main { flex: 1; }
+/* Estilo base card/modal/offcanvas (pode ser sobrescrito pelo dark mode) */
+.card, .modal-content, .offcanvas {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
     transition: box-shadow 0.2s ease-in-out;
 }
-
-h1, h2, h3, h4, h5, .navbar-brand {
-    color: var(--brand-color);
-}
-
-.btn {
-    transition: all 0.2s ease-in-out;
-}
-
-.btn-primary {
+.card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important; }
+h1, h2, h3, h4, h5, .navbar-brand-text, .offcanvas-title, .modal-title { color: var(--brand-color); }
+.btn { transition: all 0.2s ease-in-out; }
+.btn-primary { /* Botão Roxo */
     --bs-btn-bg: var(--brand-color);
     --bs-btn-border-color: var(--brand-color);
     --bs-btn-hover-bg: var(--brand-color-light);
     --bs-btn-hover-border-color: var(--brand-color-light);
+    --bs-btn-active-bg: var(--brand-color-light);
+    --bs-btn-active-border-color: var(--brand-color-light);
+    --bs-btn-color: #fff;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-color: #fff;
 }
-
-.nav-tabs .nav-link {
-    color: var(--bs-body-color);
-    opacity: 0.7;
-}
-
-.nav-tabs .nav-link.active {
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color) var(--bs-border-color) var(--brand-color) !important;
-    border-bottom-width: 3px;
-    color: var(--bs-body-color) !important;
-    font-weight: bold;
-    opacity: 1;
-}
-
-.navbar-text {
-    color: var(--bs-body-color);
-    opacity: 0.9;
-}
-
+.navbar-text { color: var(--bs-body-color); opacity: 0.9; }
+/* Autofill (base) */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px var(--bs-secondary-bg) inset !important;
     -webkit-text-fill-color: var(--bs-body-color) !important;
-    border-color: var(--bs-border-color) !important;
+    caret-color: var(--bs-body-color) !important;
+    border: 1px solid var(--bs-border-color);
     transition: background-color 5000s ease-in-out 0s;
 }
+.form-floating > label { color: rgba(var(--bs-body-color-rgb), 0.65); }
+footer p { font-size: 0.8rem; opacity: 0.7; color: inherit; } /* Herda cor do body */
+.toast-container { z-index: 1100; }
+.top-bar { background-color: var(--bs-secondary-bg); }
+.navbar-brand-text { color: var(--brand-color); font-size: 1.25rem; font-weight: 500; text-decoration: none; margin-left: 0.75rem; }
+.btn-icon-menu { background: none; border: none; color: var(--bs-body-color); font-size: 1.75rem; padding: 0; line-height: 1; }
+.btn-icon-menu:hover { color: var(--brand-color); }
+.offcanvas { background-color: var(--bs-secondary-bg); color: var(--bs-body-color); }
+.offcanvas .nav-link { font-size: 1.1rem; padding: 0.75rem 1rem; border-radius: 0.375rem; color: var(--bs-body-color); opacity: 0.8; margin-bottom: 0.25rem; }
+.offcanvas .nav-link:hover, .offcanvas .nav-link.active { background-color: rgba(var(--brand-color-rgb), 0.1); opacity: 1; color: var(--brand-color) !important; font-weight: bold;}
+.offcanvas .nav-link i { width: 25px; text-align: center; }
+#empty-state-container { background-color: var(--bs-secondary-bg); border: 1px dashed var(--bs-border-color); }
+.empty-state-icon { font-size: 4rem; color: var(--brand-color); opacity: 0.6; }
+/* Tabela (base) */
+.table { --bs-table-bg: transparent; --bs-table-striped-bg: var(--bs-table-striped-bg); --bs-table-striped-color: var(--bs-table-striped-color); --bs-table-color: var(--bs-body-color); color: var(--bs-table-color); border-color: var(--bs-border-color); }
+.table thead { color: var(--bs-body-color); opacity: 0.7; }
+.table td, .table th { border-bottom: 1px solid var(--bs-border-color); color: inherit; }
+.table-hover > tbody > tr:hover > * { --bs-table-hover-bg: rgba(var(--bs-body-color-rgb), 0.075); color: var(--bs-body-color); }
+.table-striped > tbody > tr:nth-of-type(odd) > * { color: var(--bs-table-striped-color); }
+.badge.bg-warning { --bs-bg-opacity: 1; background-color: rgba(255, 193, 7, var(--bs-bg-opacity)) !important; }
+/* Botão Atualizar Estoque (verde) */
+.btn-atualizar-estoque { background-color: #198754; border-color: #198754; color: #ffffff; }
+.btn-atualizar-estoque:hover { background-color: #157347; border-color: #146c43; color: #ffffff; }
+#painel-aviso-estoque .text-danger p strong { color: var(--bs-danger-text-emphasis-dark, #dc3545) !important; }
+#painel-aviso-estoque .text-danger p, #painel-aviso-estoque .text-success p { color: var(--bs-body-color) !important; opacity: 0.9; }
+/* Destaque Auditoria */
+tr.diferenca-positiva td { background-color: rgba(54, 162, 235, 0.15) !important; }
+tr.diferenca-negativa td { background-color: rgba(255, 99, 132, 0.15) !important; }
+tr.diferenca-positiva:hover td { background-color: rgba(54, 162, 235, 0.25) !important; }
+tr.diferenca-negativa:hover td { background-color: rgba(255, 99, 132, 0.25) !important; }
+/* Linha Usuário Inativo */
+tr.table-secondary td { background-color: rgba(var(--bs-danger-rgb), 0.1) !important; color: rgba(var(--bs-body-color-rgb), 0.6) !important; }
+tr.table-secondary:hover td { background-color: rgba(var(--bs-danger-rgb), 0.2) !important; color: rgba(var(--bs-body-color-rgb), 0.8) !important; }
+tr.table-secondary .badge { opacity: 0.85; }
+/* Relatório */
+.card-filtros { background-color: rgba(var(--bs-body-color-rgb), 0.03) !important; border: 1px solid var(--bs-border-color); }
+.card-sumario { color: #fff !important; border: none; transition: transform 0.2s ease-in-out; }
+.card-sumario:hover { transform: translateY(-5px); }
+.card-sumario .card-title, .card-sumario .card-text, .card-sumario .h2, .card-sumario .display-5 { color: #fff !important; opacity: 0.95; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+.card-sumario .display-5 { font-weight: 700 !important; }
+.card-sumario-icone { font-size: 3rem; opacity: 0.2; position: absolute; bottom: 0.5rem; right: 1rem; }
+.card-sumario h2 { white-space: nowrap; }
+.card-auditorias { background: linear-gradient(45deg, #6f42c1, #8558d3) !important; }
+.card-divergentes { background: linear-gradient(45deg, #ffc107, #ffca2c) !important; }
+.card-precisao { background: linear-gradient(45deg, #198754, #28a745) !important; }
+.card-neutro { background: linear-gradient(45deg, #6c757d, #8d97a0) !important; }
+.card-sobra { background: linear-gradient(45deg, #0dcaf0, #3ee6f7) !important; }
+.card-falta { background: linear-gradient(45deg, #dc3545, #e85a67) !important; }
+/* Botão File Input (base/claro) */
+.form-control::file-selector-button { background-color: var(--bs-secondary-bg); color: var(--bs-body-color); border-color: var(--bs-border-color); transition: background-color .15s ease-in-out, border-color .15s ease-in-out; border-top-left-radius: inherit; border-bottom-left-radius: inherit; margin: -0.375rem -0.75rem; padding: 0.375rem 0.75rem; margin-right: 0.75rem; }
+.form-control:hover:not(:disabled):not([readonly])::file-selector-button { background-color: rgba(var(--bs-body-color-rgb), 0.1); }
+/* Gráfico */
+.chart-container { position: relative; height: 40vh; width: 100%; }
+/* Alinhamento Tabela */
+.table td.text-end, .table th.text-end { text-align: right !important; }
+.table td.text-center, .table th.text-center { text-align: center !important; }
+/* Link Ativo Menu */
+.offcanvas .nav-link.active { font-weight: bold; color: var(--brand-color) !important; background-color: rgba(var(--brand-color-rgb), 0.1); }
 
-.form-floating > label {
-    color: rgba(var(--bs-body-color-rgb), 0.65);
+/* --- ESTILOS PARA SIGNUP.HTML (Fundo Escuro, Card Claro, Roxo Padrão) --- */
+body.signup-page {
+    /* Força fundo escuro sempre */
+    background-color: #1a1a1a;
+    color: #f8f9fa; /* Texto claro padrão da página */
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
-footer p {
-    font-size: 0.8rem;
-    opacity: 0.7;
-}
-
-/* ESTILOS PARA NOTIFICAÇÃO TOAST */
-.toast-container {
-    z-index: 1100;
-}
-
-/* ESTILO PARA A CENTRAL DE NOTIFICAÇÕES */
-#central-notificacoes ul {
-    padding-left: 0;
-    list-style: none;
-    font-size: 0.9rem;
-}
-
-#central-notificacoes li {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--bs-border-color);
+/* Container centralizado */
+.form-signup-container {
+    flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
 }
 
-#central-notificacoes li:last-child {
-    border-bottom: none;
-}
-
-#central-notificacoes .bi {
-    margin-right: 0.75rem;
-    font-size: 1.2rem;
-}
-
-/* ESTILOS PARA DESTAQUE DE DIFERENÇAS NA TABELA */
-.table > tbody > tr {
-    transition: background-color 0.3s ease-in-out;
-}
-
-tr.diferenca-negativa {
-    background-color: rgba(255, 99, 132, 0.15);
-}
-tr.diferenca-positiva {
-    background-color: rgba(54, 162, 235, 0.15);
-}
-tr.diferenca-zero {
-    background-color: rgba(75, 192, 192, 0.15);
-}
-
-.diferenca-icone {
-    margin-right: 0.5rem;
-}
-
-.contagem-cell {
-    display: flex;
-    align-items: center;
-}
-
-.recontagem-aviso {
-    margin-left: 0.75rem;
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #fd7e14;
-    white-space: nowrap;
-}
-
-.recontagem-aviso .bi {
-    vertical-align: middle;
-}
-
-/* Limita a altura do contêiner do gráfico */
-.chart-container {
-    position: relative;
-    height: auto;
-    max-height: 500px;
-}
-
-/* Lógica de Visualização de Painel */
-#painel-auditoria-ativa {
-    display: none;
-}
-#placeholder-detalhe {
-    display: block;
-}
-body.modo-detalhes #painel-auditoria-ativa {
-    display: block;
-}
-body.modo-detalhes #placeholder-detalhe {
-    display: none;
-}
-
-/* --- NOVOS ESTILOS PARA O DASHBOARD DE RELATÓRIO --- */
-.card-sumario {
-    color: #fff !important;
+/* Card SEMPRE CLARO */
+.signup-card {
+    background-color: #ffffff; /* Fundo branco */
+    color: #212529; /* Texto escuro */
+    padding: 3rem;
+    border-radius: 0.75rem;
+    max-width: 480px;
+    width: 100%;
     border: none;
-}
-.card-sumario .card-title, .card-sumario .card-text {
-    color: #fff !important;
-    opacity: 0.9;
-}
-.card-sumario .h2 {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #fff !important;
-}
-.card-sumario-icone {
-    font-size: 2rem;
-    opacity: 0.5;
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
 }
 
-.card-diferencas {
-    background: linear-gradient(45deg, #6f42c1, #8558d3) !important;
+/* Título Roxo */
+.signup-card .brand-text {
+    color: var(--brand-color);
+    font-weight: 700;
 }
-.card-sobra {
-    background: linear-gradient(45deg, #198754, #28a745) !important;
+
+/* Subtítulo */
+.signup-card .text-muted {
+     color: #6c757d !important; /* Cinza padrão Bootstrap claro */
+     font-size: 0.95rem;
 }
-.card-falta {
-    background: linear-gradient(45deg, #dc3545, #e85a67) !important;
+
+/* Labels no card claro */
+.signup-card .form-label {
+    color: #495057; /* Cinza escuro para labels */
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Inputs no card claro */
+.signup-card .form-control {
+    background-color: #f8f9fa; /* Fundo cinza bem claro */
+    color: #212529; /* Texto escuro */
+    border: 1px solid #ced4da; /* Borda padrão Bootstrap */
+    padding: 0.75rem 1rem;
+}
+
+/* Foco ROXO no card claro */
+.signup-card .form-control:focus {
+    background-color: #f8f9fa;
+    color: #212529;
+    border-color: var(--brand-color); /* Roxo */
+    box-shadow: 0 0 0 0.25rem rgba(var(--brand-color-rgb), 0.25); /* Sombra roxa */
+}
+
+/* Autofill Claro (sobrescreve base) */
+.signup-card input:-webkit-autofill,
+.signup-card input:-webkit-autofill:hover,
+.signup-card input:-webkit-autofill:focus,
+.signup-card input:-webkit-autofill:active {
+   -webkit-box-shadow: 0 0 0 1000px #f8f9fa inset !important; /* Fundo cinza claro */
+   -webkit-text-fill-color: #212529 !important; /* Texto escuro */
+   caret-color: #212529 !important;
+   border: 1px solid #ced4da;
+}
+
+
+/* Botão Gradiente Roxo */
+.btn-gradient {
+    background-image: linear-gradient(to right, var(--brand-color) 0%, var(--brand-color-light) 50%, var(--brand-color) 100%);
+    background-size: 200% auto;
+    color: white;
+    border: none;
+    font-weight: 500;
+    transition: background-position 0.3s ease-in-out;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+.btn-gradient:hover {
+    background-position: right center;
+    color: white;
+}
+
+/* Link "Entrar" Roxo */
+.signup-card .link-highlight {
+    color: var(--brand-color); /* Roxo principal */
+    text-decoration: none;
+    font-weight: 500;
+}
+.signup-card .link-highlight:hover {
+    text-decoration: underline;
+    color: #5a3c8a; /* Roxo um pouco mais escuro (ajuste se necessário) */
+}
+
+/* Footer na página escura */
+.signup-footer {
+     color: rgba(255, 255, 255, 0.6);
+}
+.signup-footer p {
+     color: rgba(255, 255, 255, 0.5);
+}
+
+/* Ajuste spinner */
+.btn .spinner-border { margin-right: 0.5rem; }
+
+/* Texto de erro de senha no card claro */
+.signup-card #password-mismatch {
+    color: var(--bs-danger);
+}
+
+/* Alertas de erro/sucesso no card claro */
+.signup-card .alert-danger {
+     color: var(--bs-danger-text-emphasis);
+     background-color: var(--bs-danger-bg-subtle);
+     border-color: var(--bs-danger-border-subtle);
+}
+.signup-card .alert-success {
+     color: var(--bs-success-text-emphasis);
+     background-color: var(--bs-success-bg-subtle);
+     border-color: var(--bs-success-border-subtle);
 }
